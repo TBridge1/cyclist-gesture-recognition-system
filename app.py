@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#imports for the application
 import csv
 import copy
 import argparse
@@ -15,7 +16,13 @@ from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
 
+import serial
+import time
+ser = serial.Serial('COM3', 9600)
 
+gesture_counter = 0
+gesture_type = ""
+# gets arguments such as size for camera/ non keyboard inputs
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -37,7 +44,7 @@ def get_args():
 
     return args
 
-
+# main function of the program
 def main():
     # Argument parsing #################################################################
     args = get_args()
@@ -61,22 +68,24 @@ def main():
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(
         static_image_mode=use_static_image_mode,
-        max_num_hands=1,
+        max_num_hands=2,
         min_detection_confidence=min_detection_confidence,
         min_tracking_confidence=min_tracking_confidence,
     )
-
+    #keypoint classifier class initialised
     keypoint_classifier = KeyPointClassifier()
 
     point_history_classifier = PointHistoryClassifier()
 
     # Read labels ###########################################################
-    with open('model/keypoint_classifier/keypoint_classifier_label.csv',
-              encoding='utf-8-sig') as f:
-        keypoint_classifier_labels = csv.reader(f)
-        keypoint_classifier_labels = [
-            row[0] for row in keypoint_classifier_labels
-        ]
+    # with open('model/keypoint_classifier/keypoint_classifier_label.csv',
+    #           encoding='utf-8-sig') as f:
+    #     keypoint_classifier_labels = csv.reader(f)
+    #     keypoint_classifier_labels = [
+    #         row[0] for row in keypoint_classifier_labels
+    #     ]
+    #keypoint_classifier_labels = ["Open", "Close", "Pointer", "OK"]
+    keypoint_classifier_labels = ["Neutral", "Stop", "Direction", "Thanks"]
     with open(
             'model/point_history_classifier/point_history_classifier_label.csv',
             encoding='utf-8-sig') as f:
@@ -111,7 +120,7 @@ def main():
         ret, image = cap.read()
         if not ret:
             break
-        image = cv.flip(image, 1)  # Mirror display
+        #image = cv.flip(image, 1)  # Mirror display
         debug_image = copy.deepcopy(image)
 
         # Detection implementation #############################################################
@@ -141,10 +150,12 @@ def main():
 
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-                if hand_sign_id == 2:  # Point gesture
-                    point_history.append(landmark_list[8])
-                else:
-                    point_history.append([0, 0])
+
+                led_on_off(led(hand_sign_id, handedness))
+                # if hand_sign_id == 2:  # Point gesture
+                #     point_history.append(landmark_list[8])
+                # else:
+                #     point_history.append([0, 0])
 
                 # Finger gesture classification
                 finger_gesture_id = 0
@@ -193,22 +204,30 @@ def select_mode(key, mode):
         mode = 2
     return number, mode
 
-
+# create a bounding box around the hand
 def calc_bounding_rect(image, landmarks):
+
+    #get image or frame height and width by the shape of the image.
     image_width, image_height = image.shape[1], image.shape[0]
 
+    #uninitialised array in the form (x,y) of type int
     landmark_array = np.empty((0, 2), int)
 
+    # loops the landmarks list
     for _, landmark in enumerate(landmarks.landmark):
+        # gets the points closest to edge
         landmark_x = min(int(landmark.x * image_width), image_width - 1)
         landmark_y = min(int(landmark.y * image_height), image_height - 1)
+
 
         landmark_point = [np.array((landmark_x, landmark_y))]
 
         landmark_array = np.append(landmark_array, landmark_point, axis=0)
 
+    # uses openCV to get the coordinates of a rectangle of the array
     x, y, w, h = cv.boundingRect(landmark_array)
 
+    # returns the co-ordinates
     return [x, y, x + w, y + h]
 
 
@@ -293,7 +312,7 @@ def logging_csv(number, mode, landmark_list, point_history_list):
             writer.writerow([number, *point_history_list])
     return
 
-
+ # function for drawing the landmarks on the frame
 def draw_landmarks(image, landmark_point):
     if len(landmark_point) > 0:
         # Thumb
@@ -394,87 +413,87 @@ def draw_landmarks(image, landmark_point):
 
     # Key Points
     for index, landmark in enumerate(landmark_point):
-        if index == 0:  # 手首1
+        if index == 0:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 1:  # 手首2
+        if index == 1:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 2:  # 親指：付け根
+        if index == 2:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 3:  # 親指：第1関節
+        if index == 3:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 4:  # 親指：指先
+        if index == 4:
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
-        if index == 5:  # 人差指：付け根
+        if index == 5:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 6:  # 人差指：第2関節
+        if index == 6:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 7:  # 人差指：第1関節
+        if index == 7:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 8:  # 人差指：指先
+        if index == 8:
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
-        if index == 9:  # 中指：付け根
+        if index == 9:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 10:  # 中指：第2関節
+        if index == 10:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 11:  # 中指：第1関節
+        if index == 11:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 12:  # 中指：指先
+        if index == 12:
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
-        if index == 13:  # 薬指：付け根
+        if index == 13:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 14:  # 薬指：第2関節
+        if index == 14:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 15:  # 薬指：第1関節
+        if index == 15:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 16:  # 薬指：指先
+        if index == 16:
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
-        if index == 17:  # 小指：付け根
+        if index == 17:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 18:  # 小指：第2関節
+        if index == 18:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 19:  # 小指：第1関節
+        if index == 19:
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
-        if index == 20:  # 小指：指先
+        if index == 20:
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
                       -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
@@ -520,7 +539,7 @@ def draw_point_history(image, point_history):
 
     return image
 
-
+# function to show the image, mode, fps, and number
 def draw_info(image, fps, mode, number):
     cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
                1.0, (0, 0, 0), 4, cv.LINE_AA)
@@ -538,6 +557,66 @@ def draw_info(image, fps, mode, number):
                        cv.LINE_AA)
     return image
 
+def led(hand_sign_id, handedness):
 
+    global gesture_type
+    global gesture_counter
+
+    if hand_sign_id == 1:
+        if(gesture_type == "Stop"):
+            gesture_counter+=1
+        else:
+            gesture_type = "Stop"
+            gesture_counter=1
+
+    elif hand_sign_id == 2:
+        if(gesture_type == handedness.classification[0].label[0:]):
+            gesture_counter+=1
+        else:
+            gesture_type= handedness.classification[0].label[0:]
+            gesture_counter=1
+
+    elif hand_sign_id == 3:
+        if(gesture_type == "Thanks"):
+            gesture_counter+=1
+        else:
+            gesture_type = "Thanks"
+            gesture_counter=1
+    else:
+        if(gesture_type == "Neutral"):
+            gesture_counter+=1
+        else:
+            gesture_type = "Neutral"
+            gesture_counter=1
+
+
+    if gesture_counter>10:
+        return gesture_type
+    else:
+        return ""
+
+def led_on_off(input):
+    if input =="Stop":
+        print("STOP")
+        time.sleep(0.1)
+        ser.write(b'S')
+    elif input == "Left":
+        print("LEFT")
+        time.sleep(0.1)
+        ser.write(b'L')
+    elif input == "Right":
+        print("RIGHT")
+        time.sleep(0.1)
+        ser.write(b'R')
+    elif input == "Neutral":
+        print("NEUTRAL")
+        time.sleep(0.1)
+        ser.write(b'N')
+    elif input == "Thanks":
+        print("THANKS")
+        time.sleep(0.1)
+        ser.write(b'T')
+
+# run the program
 if __name__ == '__main__':
     main()
