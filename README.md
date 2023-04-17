@@ -1,23 +1,20 @@
-# hand-gesture-recognition-using-mediapipe
-Estimate hand pose using MediaPipe (Python version).<br> This is a sample 
-program that recognizes hand signs and finger gestures with a simple MLP using the detected key points.
-<br> ❗ _️**This is English Translated version of the [original repo](https://github.com/Kazuhito00/hand-gesture-recognition-using-mediapipe). All Content is translated to english along with comments and notebooks**_ ❗
-<br> 
-![mqlrf-s6x16](https://user-images.githubusercontent.com/37477845/102222442-c452cd00-3f26-11eb-93ec-c387c98231be.gif)
+# Using Gesture Recognition to Show a Cyclist's Intent
+Estimate hand pose using MediaPipe in Python 3.10.<br> This program adapts a [GitHub](https://github.com/Kazuhito00/hand-gesture-recognition-using-mediapipe)
+and translated to [English](https://github.com/Kazuhito00/hand-gesture-recognition-using-mediapipe) to create a series of gestures
+a cyclist can use to show their intents to other road users.
 
-This repository contains the following contents.
-* Sample program
-* Hand sign recognition model(TFLite)
-* Finger gesture recognition model(TFLite)
-* Learning data for hand sign recognition and notebook for learning
-* Learning data for finger gesture recognition and notebook for learning
+The four classes are Neutral, Stop, Direction and Thanks.
+An Arduino with LEDs connected through Serial Port and a webcam is required.
+An external webcam is better suited to get the right angle for viewing hands.
 
 # Requirements
+* Python 3.10
 * mediapipe 0.8.1
 * OpenCV 3.4.2 or Later
 * Tensorflow 2.3.0 or Later<br>tf-nightly 2.5.0.dev or later (Only when creating a TFLite for an LSTM model)
 * scikit-learn 0.23.2 or Later (Only if you want to display the confusion matrix) 
 * matplotlib 3.3.2 or Later (Only if you want to display the confusion matrix)
+
 
 # Demo
 Here's how to run the demo using your webcam.
@@ -38,8 +35,10 @@ Tracking confidence threshold (Default：0.5)
 # Directory
 <pre>
 │  app.py
-│  keypoint_classification.ipynb
-│  point_history_classification.ipynb
+│  keypoint_classification.py
+│ 
+│  
+│  
 │  
 ├─model
 │  ├─keypoint_classifier
@@ -60,15 +59,12 @@ Tracking confidence threshold (Default：0.5)
     └─cvfpscalc.py
 </pre>
 ### app.py
-This is a sample program for inference.<br>
+This is the main program for interacting and recognising gestures.<br>
 In addition, learning data (key points) for hand sign recognition,<br>
-You can also collect training data (index finger coordinate history) for finger gesture recognition.
 
-### keypoint_classification.ipynb
+### keypoint_classification.py
 This is a model training script for hand sign recognition.
 
-### point_history_classification.ipynb
-This is a model training script for finger gesture recognition.
 
 ### model/keypoint_classifier
 This directory stores files related to hand sign recognition.<br>
@@ -78,13 +74,6 @@ The following files are stored.
 * Label data(keypoint_classifier_label.csv)
 * Inference module(keypoint_classifier.py)
 
-### model/point_history_classifier
-This directory stores files related to finger gesture recognition.<br>
-The following files are stored.
-* Training data(point_history.csv)
-* Trained model(point_history_classifier.tflite)
-* Label data(point_history_classifier_label.csv)
-* Inference module(point_history_classifier.py)
 
 ### utils/cvfpscalc.py
 This is a module for FPS measurement.

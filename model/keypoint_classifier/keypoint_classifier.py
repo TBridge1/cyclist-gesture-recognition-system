@@ -26,22 +26,30 @@ class KeyPointClassifier(object):
         # Gets model output tensor details.
         self.output_details = self.interpreter.get_output_details()
 
-    # instance called
+    # takes a list of landmarks as input, runs inference on a TensorFlow Lite interpreter,
+    # and returns the index of the highest probability class predicted by the model.
     def __call__(
             # defines list
             self,
             landmark_list,
     ):
+        # retrieves the index of the input tensor of the TensorFlow Lite interpreter
+        # stored as an instance variable in the class.
         input_details_tensor_index = self.input_details[0]['index']
+        # his sets the input tensor of the interpreter to the landmark_list
+        # converted into a NumPy array of dtype np.float32.
         self.interpreter.set_tensor(
             input_details_tensor_index,
             np.array([landmark_list], dtype=np.float32))
+        # invokes the interpreter to run the inference process on the input data.
         self.interpreter.invoke()
-
+        # retrieves the index of the output tensor of the TensorFlow Lite interpreter
+        # stored as an instance variable in the class.
         output_details_tensor_index = self.output_details[0]['index']
-
+        # retrieves the output tensor of the interpreter
         result = self.interpreter.get_tensor(output_details_tensor_index)
-
+        # This computes the index of the highest probability class based on the output tensor by using the
+        # argmax function on a flattened version of the result tensor.
         result_index = np.argmax(np.squeeze(result))
-
+        # returns the index of the highest probability class
         return result_index
