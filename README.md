@@ -1,12 +1,12 @@
 # Using Gesture Recognition to Show a Cyclist's Intent
 Estimate hand pose using MediaPipe in Python 3.10.<br> This program adapts a [GitHub](https://github.com/Kazuhito00/hand-gesture-recognition-using-mediapipe)
-and translated to [English](https://github.com/Kazuhito00/hand-gesture-recognition-using-mediapipe) to create a series of gestures
+and translated to [English](https://github.com/kinivi/hand-gesture-recognition-mediapipe) to create a series of gestures
 a cyclist can use to show their intents to other road users.
 
 The four classes are Neutral, Stop, Direction and Thanks.
 An Arduino with LEDs connected through Serial Port and a webcam is required.
 An external webcam is better suited to get the right angle for viewing hands.
-
+![](Pictures/Neutral.jpg)![](Pictures/Stop.jpg)![](Pictures/Direction.jpg)![](Pictures/Thanks.jpg)
 # Requirements
 * Python 3.10
 * mediapipe 0.8.1
@@ -124,15 +124,13 @@ To re iterate the fact that this is built off others work but I had explored
 most of these options before finding the GitHub it just combined everything together
 and had it work with MediaPipe which was difficult to figure out without it.
 
-# Training
-Hand sign recognition and can add and change training data and retrain the model.
-
-### Hand sign recognition training
+###Main Program
 #### 1.Learning data collection
 Run "[app.py](app.py)" and
 press "k" to enter the mode to save key points（displayed as 「MODE:Logging Key Point」）<br>
 If you press "0" to "9", the key points will be added to "model/keypoint_classifier/keypoint.csv" as shown below.<br>
 1st column: Pressed number (used as class ID), 2nd and subsequent columns: Key point coordinates<br>
+Press n to return to standard not logging mode.
 
 #### 2.Model training
 Open "[keypoint_classification.py](keypoint_classification.py)" is responsible for training the model.
@@ -140,18 +138,21 @@ Running the file will take the collected data in the CSV and pass it through the
 display a Confusion Matrix and Classification Report of the model to understand how successful it is.<br>
 
 #### 3.Arduino Compatibility
-Once a model has been trained the Gestures should be recognised with a high degree of accuracy, once a gesture has been verfiied
-it will display the appropriate colour LED on the Arduino breadboard.
-
+The "[Arduino Code](ArduinoCode/ArduinoCode.ino)" provided must be installed onto an Arduino and the Arduino is set up with three connections (7,8,9) in the digitial pins
+section to the first column in any row. A resistor is connected in the same series and the other end of the resistor is connected in series to the positive end of the LED. 
+The negative end of the LED is connected to the negative section of the breadboard and a power line is provided from the positive section to a ground port on the Arduino.
+![](Pictures/Arduino.jpg)Once a model has been trained the Gestures should be recognised with a high degree of accuracy once "[app.py](app.py)" is run again, once a gesture has been verified
+it will display the appropriate colour LED on the Arduino breadboard. 
+![](Pictures/Stop.jpg)
 # Reference
 * [MediaPipe](https://mediapipe.dev/)
 
 # Author
-Thomas Bridgeman
+[Thomas Bridgeman](https://github.com/thomasbridgemanatu)
 
 # Adapted from Author/Translator
-Kazuhito Takahashi(https://twitter.com/KzhtTkhs)
-Nikita Kiselov(https://github.com/kinivi)
+[Kazuhito Takahashi](https://github.com/Kazuhito00) <br>
+[Nikita Kiselov](https://github.com/kinivi)
  
 # License 
 hand-gesture-recognition-using-mediapipe is under [Apache v2 license](LICENSE).
